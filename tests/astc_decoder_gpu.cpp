@@ -27,6 +27,14 @@
 #endif
 
 #include "host_shaders/astc_decoder_comp_spv.h"
+#include "host_shaders/astc_decoder_classic_comp_spv.h"
+// (Hookshot) Which of the two compiled-in decoders this build checks: the lds one (8fe93bbf's), or with ASTC_FIXTURE_CLASSIC
+// the classic one NVIDIA's driver runs (gpu/vk/astc_decoder_pick.h). tests/test_astc_decoder_gpu.py builds both
+#ifdef ASTC_FIXTURE_CLASSIC
+#define FIXTURE_SPV ASTC_DECODER_CLASSIC_COMP_SPV
+#else
+#define FIXTURE_SPV ASTC_DECODER_COMP_SPV
+#endif
 #include "video_core/textures/astc.h"
 
 #define CHECK(x)                                                                                                      \
@@ -366,9 +374,9 @@ TestImage build_test_image(uint32_t bw, uint32_t bh, bool native_tiling, uint32_
 
 int run_cpu_only() {
     // Sanity-check compiled SPIR-V header embedded in gpu/vk/host_shaders/astc_decoder_comp_spv.h.
-    CHECK(sizeof(ASTC_DECODER_COMP_SPV) >= 20u);
-    CHECK((sizeof(ASTC_DECODER_COMP_SPV) % 4u) == 0u);
-    CHECK(ASTC_DECODER_COMP_SPV[0] == 0x07230203u);
+    CHECK(sizeof(FIXTURE_SPV) >= 20u);
+    CHECK((sizeof(FIXTURE_SPV) % 4u) == 0u);
+    CHECK(FIXTURE_SPV[0] == 0x07230203u);
 
     uint64_t total_pixels = 0;
     uint64_t non_zero_pixels = 0;
@@ -402,7 +410,7 @@ int run_cpu_only() {
     }
     CHECK(non_zero_pixels > total_pixels / 2u);
     std::printf("PASS: ASTC fixture compiles, SPIR-V valid (%zu bytes), CPU reference decoded %llu pixels across 14 block sizes (GPU execution not requested)\n",
-                sizeof(ASTC_DECODER_COMP_SPV), static_cast<unsigned long long>(total_pixels));
+                sizeof(FIXTURE_SPV), static_cast<unsigned long long>(total_pixels));
     return 0;
 }
 
@@ -646,8 +654,8 @@ int run_gpu(const char* requested_device) {
     vkGetPhysicalDeviceMemoryProperties(physical, &mem_props);
 
     VkShaderModuleCreateInfo smci{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-    smci.codeSize = sizeof(ASTC_DECODER_COMP_SPV);
-    smci.pCode = ASTC_DECODER_COMP_SPV;
+    smci.codeSize = sizeof(FIXTURE_SPV);
+    smci.pCode = FIXTURE_SPV;
     VkShaderModule shader{};
     CHECK(vkCreateShaderModule(device, &smci, nullptr, &shader) == VK_SUCCESS);
 

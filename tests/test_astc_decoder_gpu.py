@@ -2,7 +2,8 @@
 """Game-free Vulkan ASTC decoder verification against Hookshot's CPU ASTC reference.
 
 Default mode (used by run_all.py, no GPU or Vulkan loader required):
-  Compiles tests/astc_decoder_gpu.cpp against gpu/vk/host_shaders/astc_decoder_comp_spv.h
+  Compiles tests/astc_decoder_gpu.cpp against gpu/vk/host_shaders/astc_decoder_comp_spv.h, and again against
+  astc_decoder_classic_comp_spv.h (the decoder NVIDIA's driver runs: gpu/vk/astc_decoder_pick.h),
   and gpu/third_party/suyu/video_core/textures/astc.cpp, validates the embedded SPIR-V
   header, and runs the CPU ASTC reference across all 14 ASTC block sizes.
 
@@ -31,7 +32,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cxx", default=os.environ.get("CXX") or shutil.which("clang++") or shutil.which("g++") or "g++")
     parser.add_argument("--headers", type=Path, required=True, help="path to Vulkan-Headers include directory")
-    parser.add_argument("--gpu", action="store_true", help="dispatch astc_decoder_comp_spv.h on a Vulkan device")
+    parser.add_argument("--gpu", action="store_true", help="dispatch both decoders' SPIR-V on a Vulkan device")
     parser.add_argument("--gpu-device", help="case-insensitive device-name substring for --gpu")
     args = parser.parse_args()
     args.gpu = args.gpu or bool(args.gpu_device)
@@ -62,11 +63,17 @@ def main():
             link_flags += ["-static"]
         libraries = ["-ldl"] if os.name != "nt" else []
 
-        subprocess.run(
-            [args.cxx, "-std=c++20", "-O1", "-Wall", "-Wextra", "-Werror", "-Wno-missing-field-initializers",
-             *inc_flags, str(fixture_cpp), str(astc_obj), "-o", str(exe), *link_flags, *libraries],
-            check=True,
-        )
+        # (Hookshot) both compiled-in decoders: the lds one (8fe93bbf's) and the classic one NVIDIA's driver runs
+        # (gpu/vk/astc_decoder_pick.h)
+        exes = []
+        for decoder, defines in (("lds", []), ("classic", ["-DASTC_FIXTURE_CLASSIC"])):
+            one = exe.with_name(exe.stem + "_" + decoder + exe.suffix)
+            subprocess.run(
+                [args.cxx, "-std=c++20", "-O1", "-Wall", "-Wextra", "-Werror", "-Wno-missing-field-initializers", *defines,
+                 *inc_flags, str(fixture_cpp), str(astc_obj), "-o", str(one), *link_flags, *libraries],
+                check=True,
+            )
+            exes.append((decoder, one))
 
         env = os.environ.copy()
         if os.name == "nt":
@@ -74,15 +81,16 @@ def main():
             if Path(cxx_dir).is_dir():
                 env["PATH"] = cxx_dir + os.pathsep + env.get("PATH", "")
 
-        cmd = [str(exe)]
-        if args.gpu:
-            cmd.append("--gpu")
-            if args.gpu_device:
-                cmd += ["--device", args.gpu_device]
-        else:
-            cmd.append("--cpu-only")
-
-        subprocess.run(cmd, check=True, timeout=60 if args.gpu else 20, env=env)
+        for decoder, one in exes:
+            print("decoder: " + decoder, flush=True)
+            cmd = [str(one)]
+            if args.gpu:
+                cmd.append("--gpu")
+                if args.gpu_device:
+                    cmd += ["--device", args.gpu_device]
+            else:
+                cmd.append("--cpu-only")
+            subprocess.run(cmd, check=True, timeout=60 if args.gpu else 20, env=env)
     return 0
 
 
