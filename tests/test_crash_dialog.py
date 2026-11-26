@@ -657,12 +657,12 @@ def logic_checks(exe, menu, tmp, form):
               "Hookshot closed unexpectedly during the start. An unexpected error.").strip()
     assert url.startswith(form + "&") and len(url) <= 2000, url
     q = parse_qs(urlsplit(url).query)
-    assert q["template"] == [".github/ISSUE_TEMPLATE/1-game-problem.yml"]
-    assert (ROOT / q["template"][0]).is_file()
-    assert q["field:version"] == ["v3.1.0 (source 1234abcd)"] and q["field:gpu"] == ["NVIDIA GeForce RTX 3090, NVIDIA 580.95.05"]
-    assert q["title"] == ["Game: Hookshot closed unexpectedly during the start"] and "field:what" in q and "field:system" in q
+    assert q["template"] == ["1-game-problem.yml"]   # (GitHub's form: the template's file name)
+    assert (ROOT / ".github/ISSUE_TEMPLATE" / q["template"][0]).is_file()
+    assert q["version"] == ["v3.1.0 (source 1234abcd)"] and q["gpu"] == ["NVIDIA GeForce RTX 3090, NVIDIA 580.95.05"]
+    assert q["title"] == ["Game: Hookshot closed unexpectedly during the start"] and "what" in q and "system" in q
     long_url = run(exe, "url", "T", "v1", "G", "S", "w" * 3000).strip()
-    assert len(long_url) <= 2000 and "field:what" not in parse_qs(urlsplit(long_url).query) and "field:version=v1" in long_url, \
+    assert len(long_url) <= 2000 and "what" not in parse_qs(urlsplit(long_url).query) and "&version=v1" in long_url, \
         "what does not fit is left out, the rest kept"
     print("PASS: the issue link: the game-problem form, its fields, within 2000 characters")
 
@@ -850,7 +850,7 @@ def behaviour(cc, tmp):
     reports = sorted((folder / "bug-reports/pending").glob("report-*.txt"))
     assert reports[-1].read_text(encoding="utf-8") == clip, "the report is written beside the records too"
     assert len(reports) == 10 and reports[0].name == "report-20200101T000002Z.txt", ("the newest ten reports kept", reports)
-    assert link.startswith(source_form()) and len(link) <= 2000 and "field%3Aversion" not in link and "field:version=vtest-1" in link
+    assert link.startswith(source_form()) and len(link) <= 2000 and "field%3Aversion" not in link and "&version=vtest-1" in link
     assert "Hookshot%20report" not in link and "private-user" not in link
     assert "on your clipboard" in got[5][1] and "Open the report" in got[5][1].split("\n")[-1], got[5][1]
     assert "It is saved as " + str(reports[-1]) + "." in got[5][1], "the box names the saved report's path"
