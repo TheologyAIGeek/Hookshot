@@ -61,6 +61,8 @@
 
 #include "vk_builtin_spv.h"   // (RX_VK_SHADER_DIR)
 #include "host_shaders/astc_decoder_comp_spv.h"
+#include "host_shaders/astc_decoder_classic_comp_spv.h"   // (NVIDIA's driver: astc_decoder_pick.h)
+#include "astc_decoder_pick.h"
 #include "astc_opaque.h"
 #include "host_shaders/bc_encoder_comp_spv.h"
 #include "host_shaders/bc7_encoder_comp_spv.h"
@@ -947,7 +949,12 @@ bool astc_ready() {
     pi.pPushConstantRanges = &pr;
     if (vkCreatePipelineLayout(dev.device, &pi, nullptr, &astc_layout) != VK_SUCCESS) return false;
     VkShaderModuleCreateInfo mi{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-    const auto spv = BUILTIN_SPV(ASTC_DECODER_COMP_SPV);
+    // (Hookshot) the decoder as it was before 8fe93bbf on NVIDIA's driver, where the faster one draws nothing; RX_VK_ASTC_DECODER=
+    // classic|lds picks one on any device (astc_decoder_pick.h says why)
+    const astc_decoder_pick::Decoder which =
+        astc_decoder_pick::pick(getenv("RX_VK_ASTC_DECODER"), dev.driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY);
+    const auto spv = which == astc_decoder_pick::Decoder::classic ? BUILTIN_SPV(ASTC_DECODER_CLASSIC_COMP_SPV)
+                                                                  : BUILTIN_SPV(ASTC_DECODER_COMP_SPV);
     mi.codeSize = spv.size;
     mi.pCode = spv.code;
     VkShaderModule m = VK_NULL_HANDLE;
@@ -968,7 +975,8 @@ bool astc_ready() {
         return false;
     }
     state = 1;
-    logf("vk: ASTC is decoded on the GPU (Eden's decoder, Switch 2 tiling)");
+    logf("vk: ASTC is decoded on the GPU (Eden's decoder, Switch 2 tiling; the %s one: RX_VK_ASTC_DECODER=classic|lds picks)",
+         astc_decoder_pick::name(which));
     return true;
 }
 
