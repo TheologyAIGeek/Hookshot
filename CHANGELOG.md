@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.1.0-rc.1](https://github.com/TheologyAIGeek/Hookshot/compare/v3.0.3...v3.1.0-rc.1) (2026-11-26)
+
+
+### Features
+
+* **release:** seed the Builder's tool parts from an installed Builder ([193e159](https://github.com/TheologyAIGeek/Hookshot/commit/193e1597198782df79b82d445302a019956e8c34))
+
+
+### Bug Fixes
+
+* **builder:** check for updates and list versions on this repository's GitHub releases ([599dc51](https://github.com/TheologyAIGeek/Hookshot/commit/599dc51f07e778e7a43af41b13d0f971dd0bd8ee))
+* downloads, updates and bug reports from this repository's GitHub releases ([bda17fa](https://github.com/TheologyAIGeek/Hookshot/commit/bda17fac428e3c8031841c4de23aa5d613206d13))
+* **game:** bug reports, crash reports and pipeline lists go to this repository's GitHub ([df660f9](https://github.com/TheologyAIGeek/Hookshot/commit/df660f9efb19b846d542139e3bb99a7acc993537))
+* **linux:** updates, parts and the AppImage's update information from this repository's GitHub ([cb3b609](https://github.com/TheologyAIGeek/Hookshot/commit/cb3b6096128d5d20105e3e8a1a5154278a0e7901))
+* **release:** mark scripts/release_upload.sh executable, so the nightly uploads ([e91fff9](https://github.com/TheologyAIGeek/Hookshot/commit/e91fff9b1c308dc8430670dc2aeb5fc00e8fd162))
+* **release:** mark scripts/release_upload.sh executable, so the nightly uploads ([868931b](https://github.com/TheologyAIGeek/Hookshot/commit/868931b350140ca6ea5506e0f0a39da78d23d7e7))
+* **setup:** download from this repository's GitHub releases ([2e43db9](https://github.com/TheologyAIGeek/Hookshot/commit/2e43db9c0c6e5c62a0492b54064a9ce58675835a))
+
+
+### Tests
+
+* **ci:** every script a workflow runs by its path is executable in git ([b9da4fb](https://github.com/TheologyAIGeek/Hookshot/commit/b9da4fb4c6bbe4ec641a3f8525a1b69037c53272))
+
 ## [3.0.3](https://github.com/TheologyAIGeek/Hookshot/pull/1) (2026-11-26)
 
 The first release of this fork, which carries on from Hookshot 3.0.2 now that the original project has stopped. It takes
