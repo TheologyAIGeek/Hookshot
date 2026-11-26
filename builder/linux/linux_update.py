@@ -23,9 +23,12 @@ import zipfile
 from part_links import SYSROOT_PART, is_absolute_link, relative_sysroot_link
 
 LIST_NAME = "hookshot-linux.txt"
-LATEST_LIST = "https://git.notrexed.dev/Hookshot/Hookshot/releases/latest/download/" + LIST_NAME
-LATEST_API = "https://git.notrexed.dev/api/v1/repos/Hookshot/Hookshot/releases/latest"
-RELEASES_API = "https://git.notrexed.dev/api/v1/repos/Hookshot/Hookshot/releases?limit=20"
+# (TheologyAIGeek/Hookshot, 2026-11-26: this repository's releases on GitHub; git.notrexed.dev, the original project's own
+# server, is gone)
+REPO = "TheologyAIGeek/Hookshot"
+LATEST_LIST = "https://github.com/" + REPO + "/releases/latest/download/" + LIST_NAME
+LATEST_API = "https://api.github.com/repos/" + REPO + "/releases/latest"
+RELEASES_API = "https://api.github.com/repos/" + REPO + "/releases?per_page=20"
 # (the update tracks: the builder's Track choice, by default the track of the build installed. The setup,
 # builder/setup/setup.c, and the Windows builder, Updater.cs, use the same rules)
 TRACKS = ("release", "rc", "nightly")
@@ -130,7 +133,7 @@ def release_of(tag):
 def list_url(tag=None):
     if not tag:
         return LATEST_LIST
-    return "https://git.notrexed.dev/Hookshot/Hookshot/releases/download/%s/%s" % (release_of(tag), LIST_NAME)
+    return "https://github.com/%s/releases/download/%s/%s" % (REPO, release_of(tag), LIST_NAME)
 
 
 def newest_release(tags):
@@ -307,7 +310,7 @@ def _request(url, timeout, limit=MAX_DOWNLOAD, stop=None):
 
 def _api_download(url, stop=None):
     """A GitHub release link that failed: the same file through the API (scripts/linux/deps.sh does this for 504s)."""
-    prefix = "https://git.notrexed.dev/"
+    prefix = "https://github.com/"
     mark = "/releases/download/"
     if not url.startswith(prefix) or mark not in url:
         return None
@@ -315,11 +318,11 @@ def _api_download(url, stop=None):
     tag, _, name = rest.partition("/")
     if not repo or not tag or not name or "/" in name:
         return None
-    info = _request("https://git.notrexed.dev/api/v1/repos/%s/releases/tags/%s" % (repo, tag), 30)
+    info = _request("https://api.github.com/repos/%s/releases/tags/%s" % (repo, tag), 30)
     import json
     for asset in json.loads(info.decode("utf-8")).get("assets", []):
         if asset.get("name") == name:
-            req = urllib.request.Request(_https(asset.get("browser_download_url")), headers={
+            req = urllib.request.Request(_https(asset.get("url")), headers={   # (the API's own link: a fresh redirect)
                 "User-Agent": "Hookshot", "Accept": "application/octet-stream"})
             with _open(req, 120) as response:
                 return _read_at_most(response, MAX_DOWNLOAD, stop)
@@ -336,7 +339,7 @@ def fetch_bytes(url, timeout=60, stop=None):
         except Cancelled:
             raise
         except urllib.error.HTTPError as error:
-            last = "git.notrexed.dev answered %s" % error.code
+            last = "GitHub answered %s" % error.code
             if error.code < 500 and error.code != 429:
                 break
         except Exception as error:
@@ -360,9 +363,9 @@ def fetch_bytes(url, timeout=60, stop=None):
     raise RuntimeError(last)
 
 
-# (hookshot, 2026-11-15) The Version menu: every release on git.notrexed.dev, page by page (Forgejo gives 50 a page at most), read
+# (hookshot, 2026-11-15) The Version menu: every release on GitHub, page by page (GitHub gives 100 a page at most), read
 # when the menu is first opened. As the Windows builder's ReleaseList.cs. tests/test_builder_version_menu.py
-RELEASES_PAGE = "https://git.notrexed.dev/api/v1/repos/Hookshot/Hookshot/releases?limit=50&page=%d"
+RELEASES_PAGE = "https://api.github.com/repos/" + REPO + "/releases?per_page=100&page=%d"
 PAGE_SIZE, MOST_PAGES = 50, 40
 
 
@@ -389,7 +392,7 @@ def releases_in(pages):
 
 
 def all_releases(get=None):
-    """Every release, all pages, newest first; None when git.notrexed.dev did not answer (a page failing part way too, so the
+    """Every release, all pages, newest first; None when GitHub did not answer (a page failing part way too, so the
     menu never shows a list cut short as if it were all)"""
     import json
     get = get or (lambda url: fetch_bytes(url, 20))

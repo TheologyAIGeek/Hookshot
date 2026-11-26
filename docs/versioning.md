@@ -70,6 +70,29 @@ fix(vk): keep the swapchain when the window is moved
 Release-As: 2.1.0-rc.1
 ```
 
+## Where the releases are
+
+The releases are this repository's on GitHub, `TheologyAIGeek/Hookshot`. The setup (`HookshotBuilder.exe`), the Windows and
+Linux Builders' update checks and Version menus, the AppImage's update information, the parts' links and the game's bug report
+links all point there. Until 2026-11-26 they pointed at `git.notrexed.dev`, the original project's own server, which is gone.
+
+### The tool parts, once
+
+The setup installs a release from its `hookshot-setup.txt`: the Builder's own parts, which CI makes for every release, and the
+tool parts (Python, emsdk, the CPM packages, `third_party`'s prebuilt files, wgpu-native), which the Windows builder workflow
+takes from the last release's list. A repository with no release yet has no list to take them from, so they are seeded once
+from an installed Builder:
+
+1. On the Windows PC with the Builder installed, from a checkout:
+   `python -I scripts/seed_builder_parts.py "%LOCALAPPDATA%\HookshotBuilder\versions\<version>\HookshotBuilder\tools" seed`.
+   It only reads the tools folder. It writes one `HookshotBuilder-<part>-<sha>.zip` per part and a seed `hookshot-setup.txt`
+   into `seed`, and warns about any zip over GitHub's 2 GiB a file.
+2. On GitHub, make a release whose tag is `builder-parts`, marked as a prerelease, and upload every file in `seed` to it.
+
+CI then finds the seed list there (`scripts/release_parts.py previous`) until a stable release has a list of its own, and every
+release after reuses the parts that did not change. The seed list names the tool parts only, never the Builder, so it is never
+a release's own list.
+
 ## How a release is made
 
 The [Release workflow](../.github/workflows/release.yml) makes every release in two steps: a release candidate, a

@@ -4,7 +4,8 @@ and the play profile (addresses and counts made on the development PC).
 
     python -I scripts/release_parts.py previous <out list> --repo <owner/name> [--repo ...] [--skip-tag <tag>]
         the newest stable release's hookshot-setup.txt (of the first repository that has one; not --skip-tag's, the release
-        being made); prints that release's tag. Exits 1 when no repository has one.
+        being made); prints that release's tag. With none, the seed list on the builder-parts release
+        (scripts/seed_builder_parts.py), printing builder-parts. Exits 1 when no repository has either.
     python -I scripts/release_parts.py profile <setup list> <work folder>
         the play profile (tools/work of the list's app part) into <work folder>
     python -I scripts/release_parts.py llvm-mingw <folder> [--name]
@@ -42,6 +43,7 @@ import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir(), "release-parts")
+SEED_RELEASE = "builder-parts"   # (where the parts live, and the seed list when no stable release has a list yet)
 # (the prebuilt files of the third_party part: what it holds and git does not)
 PREBUILT_EXT = (".dll", ".lib", ".exe", ".sha1")
 
@@ -87,6 +89,21 @@ def previous(a):
                     f.write(get(url))
                 print(r["tag_name"])
                 return 0
+    # (a repository with no stable release's list yet: the seed list on its builder-parts release, which
+    # scripts/seed_builder_parts.py made from an installed Builder's tools. It names the tool parts only, so it is never a
+    # release's own list, which the setup would install from)
+    for repo in a.repo:
+        try:
+            r = json.loads(get("https://api.github.com/repos/%s/releases/tags/%s" % (repo, SEED_RELEASE), api=True))
+        except urllib.error.HTTPError as e:
+            print("%s %s: %s" % (repo, SEED_RELEASE, e), file=sys.stderr)
+            continue
+        url = next((x["browser_download_url"] for x in r.get("assets", []) if x["name"] == "hookshot-setup.txt"), None)
+        if url:
+            with open(a.out, "wb") as f:
+                f.write(get(url))
+            print(SEED_RELEASE)
+            return 0
     print("no release with a hookshot-setup.txt in %s" % ", ".join(a.repo), file=sys.stderr)
     return 1
 

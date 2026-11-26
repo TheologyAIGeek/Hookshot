@@ -22,10 +22,10 @@
 
 #define HOS_CRASH_WATCH_ARG "--crash-watch"
 #define HOS_CRASH_SHOW_ARG "--crash-show"
-/* (the game-problem form, as the Insert menu's Bug report links it: gpu/vk/vk_bug_report.cpp kForm. Forgejo fills a form's field
-   from the query's field:<its id>, and the title from title=) */
-#define HOS_CRASH_ISSUE_FORM "https://git.notrexed.dev/Hookshot/Hookshot/issues/new?template=.github/ISSUE_TEMPLATE/1-game-problem.yml"
-#define HOS_CRASH_ISSUES "https://git.notrexed.dev/Hookshot/Hookshot/issues/new/choose"
+/* (the game-problem form, as the Insert menu's Bug report links it: gpu/vk/vk_bug_report.cpp kForm. GitHub fills an issue form's
+   field from the query's <its id>=, and the title from title=) */
+#define HOS_CRASH_ISSUE_FORM "https://github.com/TheologyAIGeek/Hookshot/issues/new?template=1-game-problem.yml"
+#define HOS_CRASH_ISSUES "https://github.com/TheologyAIGeek/Hookshot/issues/new/choose"
 enum { HOS_CRASH_LINK_MAX = 2000, HOS_CRASH_LOG_LINES = 200 };
 
 /* ---- the helper's command line ---- */
@@ -443,7 +443,7 @@ static inline size_t hos_crash_url_part(char *out, size_t cap, const char *s) {
    system, the title and what happened. Never the report itself: the player pastes that */
 static inline size_t hos_crash_issue_url(char *out, size_t cap, const char *title, const char *version, const char *gpu,
                                          const char *system, const char *what) {
-    const char *keys[] = {"&field:version=", "&field:gpu=", "&field:system=", "&title=", "&field:what="};
+    const char *keys[] = {"&version=", "&gpu=", "&system=", "&title=", "&what="};
     const char *values[] = {version, gpu, system, title, what};
     const size_t max = cap < HOS_CRASH_LINK_MAX + 1 ? cap : HOS_CRASH_LINK_MAX + 1;
     size_t n = strlen(HOS_CRASH_ISSUE_FORM);

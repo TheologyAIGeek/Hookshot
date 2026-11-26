@@ -1,4 +1,4 @@
-"""Save my pipeline list: the zip a player attaches to the "Submit your pipelines" issue (#14), so that the pipelines their play
+"""Save my pipeline list: the zip a player attaches to the "Share your pipeline list here" issue (#2), so that the pipelines their play
 built go into the list the next release builds before the game (nx2/pipeline_states.py, assets/pipeline_states/README.md).
 
 The zip holds two files and nothing else: the game folder's hookshot_pipeline_states.bin (in its cache/; checked first as
@@ -29,8 +29,8 @@ import zipfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pipeline_states  # noqa: E402  (the list's checks: parse, strict)
 
-ISSUE = 14
-ISSUE_URL = "https://git.notrexed.dev/Hookshot/Hookshot/issues/%d" % ISSUE
+ISSUE = 2   # ("Share your pipeline list here", this repository's; the original project's was its issue 14)
+ISSUE_URL = "https://github.com/TheologyAIGeek/Hookshot/issues/%d" % ISSUE
 LIST = "hookshot_pipeline_states.bin"
 REPORT = "hookshot_pipeline_report.txt"
 # (the issue's template, its lines in its order; gpu/vk/pipeline_share.h writes the same: tests/test_pipeline_share.py)
