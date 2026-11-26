@@ -1,5 +1,5 @@
 """The Builders' Version menu (2026-11-15, the owner: "a version chooser that dynamically gets absolutely every release from the
-git"): every release on git.notrexed.dev, read page by page from Forgejo's API when the menu opens, newest first; a release chosen
+git"): every release on GitHub (this repository's), read page by page from GitHub's API when the menu opens, newest first; a release chosen
 there is what the builder installs and builds the game with (as a switch of track installs that track's newest), saved, until
 Newest or another is chosen.
 
@@ -28,11 +28,13 @@ def release(tag, assets=("HookshotBuilder.exe", "hookshot-setup.txt", "hookshot-
             "assets": [{"name": n} for n in assets]}
 
 
-# (page 1 full, 50 releases: the 4 real ones, the file-holding ones, a draft, then 41 old versions; page 2 the rest)
+# (page 1 full, PAGE releases (GitHub's most a page): the 4 real ones, the file-holding ones, a draft, then old versions; page 2
+# the rest)
+PAGE = 100
 PAGE1 = [release("v2.3.1"), release("v2.3.0"), release("v2.2.0-rc.1", pre=True), release("rc", ("Hookshot-x86_64.AppImage",), pre=True),
          release("v2.1.0"), release("linux-parts", ("a.zip",), pre=True), release("builder-parts", ("b.zip",), pre=True),
          release("v2.4.0", draft=True), release("v2.3.1")]   # (a draft, and a tag twice)
-PAGE1 += [release("v1.%d.0" % i, ("HookshotBuilder.exe", "hookshot-setup.txt")) for i in range(50 - len(PAGE1))]
+PAGE1 += [release("v1.%d.0" % i, ("HookshotBuilder.exe", "hookshot-setup.txt")) for i in range(PAGE - len(PAGE1))]
 PAGE2 = [release("v2.0.6"), release("v2.0.5"), release("v2.2.0-rc.2", ("hookshot-linux.txt",), pre=True)]
 WANT_FIRST = ["v2.3.1", "v2.3.0", "v2.2.0-rc.2", "v2.2.0-rc.1", "v2.1.0", "v2.0.6", "v2.0.5"]
 
@@ -58,7 +60,7 @@ def check_linux():
     assert asked == [lu.RELEASES_PAGE % 1, lu.RELEASES_PAGE % 2], asked   # (page 2 short: no page 3)
     tags = [r["tag"] for r in got]
     assert tags[:len(WANT_FIRST)] == WANT_FIRST, tags[:10]
-    assert len(tags) == len(set(tags)) == len(WANT_FIRST) + (50 - 9), len(tags)
+    assert len(tags) == len(set(tags)) == len(WANT_FIRST) + (PAGE - 9), len(tags)
     for gone in ("rc", "linux-parts", "builder-parts", "v2.4.0"):
         assert gone not in tags, gone
     by = {r["tag"]: r for r in got}
@@ -108,7 +110,7 @@ var list = ReleaseList.From(pages);
 var tags = list.Select(r => r.Tag).ToList();
 var want = new[] { %WANT% };
 Check(tags.Take(want.Length).SequenceEqual(want), "order: " + string.Join(",", tags.Take(10)));
-Check(tags.Count == tags.Distinct().Count() && tags.Count == want.Length + 41, "each once, the rest kept: " + tags.Count);
+Check(tags.Count == tags.Distinct().Count() && tags.Count == want.Length + %OLD%, "each once, the rest kept: " + tags.Count);
 Check(!tags.Contains("rc") && !tags.Contains("linux-parts") && !tags.Contains("v2.4.0"), "files' releases and drafts left out");
 var by = list.ToDictionary(r => r.Tag);
 Check(by["v2.3.1"].Installable && by["v2.0.6"].Installable, "installable");
@@ -125,7 +127,7 @@ def check_dotnet(dotnet):
     with tempfile.TemporaryDirectory(prefix="builder-version-menu-") as folder:
         root = Path(folder)
         (root / "pages.txt").write_text(json.dumps(PAGE1) + "\n" + json.dumps(PAGE2) + "\n", encoding="utf-8")
-        (root / "Program.cs").write_text(PROGRAM.replace("%WANT%", ", ".join('"%s"' % t for t in WANT_FIRST)), encoding="utf-8")
+        (root / "Program.cs").write_text(PROGRAM.replace("%WANT%", ", ".join('"%s"' % t for t in WANT_FIRST)).replace("%OLD%", str(PAGE - 9)), encoding="utf-8")
         shutil.copyfile(ROOT / "builder/HookshotBuilder/ReleaseList.cs", root / "ReleaseList.cs")
         (root / "NuGet.Config").write_text("<configuration><packageSources><clear/></packageSources></configuration>", encoding="utf-8")
         (root / "Fixture.csproj").write_text('''<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>

@@ -133,7 +133,7 @@ namespace DigestFixture
             if (omitDigest) assets[0].Remove("digest");
             if (list) assets.Add(new() { ["name"] = "hookshot-setup.txt" });
             if (unusedBadZip) assets.Add(Asset("HookshotBuilder.zip", null));
-            if (sumText != null)   // (git.notrexed.dev: the digest as <asset>.sha256 beside the file)
+            if (sumText != null)   // (a release without the API's digest: <asset>.sha256 beside the file, as the original project's server had)
                 assets.Add(new() { ["name"] = (zip ? "HookshotBuilder.zip" : "HookshotBuilder.exe") + ".sha256",
                                    ["browser_download_url"] = "https://fixture.invalid/sum" });
             var json = JsonSerializer.SerializeToUtf8Bytes(new { tag_name = "v9.9.9", assets });
@@ -154,7 +154,7 @@ namespace DigestFixture
         }
 
         public static bool Api(HttpRequestMessage r) =>
-            r.RequestUri!.Host == "git.notrexed.dev" && r.RequestUri.AbsolutePath.StartsWith("/api/v1/", StringComparison.Ordinal);
+            r.RequestUri!.Host == "api.github.com" && r.RequestUri.AbsolutePath.StartsWith("/repos/TheologyAIGeek/Hookshot/releases", StringComparison.Ordinal);
 
         public Task SetupRun() => Updater.RunLatestSetup(Window, Array.Empty<string>());
         public async Task<string> FolderRun()
